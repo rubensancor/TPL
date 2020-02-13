@@ -4,6 +4,7 @@ import csv
 import json
 import gzip
 import shutil
+import pandas as pd
 from langdetect import detect
 from validate_utf8 import find_utf8_errors
 from langdetect.lang_detect_exception import *
@@ -29,7 +30,7 @@ def replace_token(token, s):
     return s
 
 
-def transform_gz_csv(path, destination_path, org, lang):
+def transform_gz_csv(path, destination_path, org, lang, user_id=False):
     files = []
     for (dirpath, dirnames, filenames) in os.walk(path):
         files = filenames
@@ -43,15 +44,24 @@ def transform_gz_csv(path, destination_path, org, lang):
             for line in f_out.readlines():
                 if find_utf8_errors(line):
                     continue
-                json_line = json.loads(line.decode("utf-8"))
+                json_line = json.loads(line.decode('utf-8'))
+
                 with open(org + '.csv', 'a') as csv_file:
-                    fieldnames = ['organisation', 'tweet']
+                    if user_id:
+                        fieldnames = ['user_id', 'organisation', 'tweet']
+                    else:
+                        fieldnames = ['organisation', 'tweet']
                     writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
                     try:
+                        # Check if the tweet is wrote in english
                         if(check_language(lang, json_line['full_text'])):
-                            writer.writerow({'organisation': org,
-                                             'tweet': json_line['full_text'].
-                                             replace('\n', '  ')})
+                            if user_id:                               
+                                writer.writerow({'user_id': json_line['user']['id_str'],
+                                            'organisation': org,
+                                            'tweet': json_line['full_text'].replace('\n', '  ')})
+                            else:
+                                writer.writerow({'organisation': org,
+                                            'tweet': json_line['full_text'].replace('\n', '  ')})
                     except LangDetectException:
                         continue
 
@@ -59,55 +69,93 @@ def transform_gz_csv(path, destination_path, org, lang):
 
 
 def remove_duplicates(file, destination):
+    df = pd.read_csv(file)
+    fieldnames = list(df.columns.values)
+
     with open(file, 'r') as in_file, open(destination, 'w') as out_file:
-        writer = csv.writer(out_file)
+        writer = csv.DictWriter(out_file, fieldnames=fieldnames)
+        csv.writer(out_file).writerow(fieldnames)
+
         seen = set()
         try:
-            for line in csv.reader(in_file):
-                if line[1] in seen:
+            reader = csv.DictReader(in_file)
+            for row in reader:
+                if row['tweet'] in seen:
                     continue
-                seen.add(line[1])
-                writer.writerow(line)
+                seen.add(row['tweet'])
+                writer.writerow(row)
         except Exception as ex:
             print(ex)
 
 
 def remove_RT(file, destination):
+    df = pd.read_csv(file)
+    fieldnames = list(df.columns.values)
+
     with open(file, 'r') as in_file, open(destination, 'w') as out_file:
-        writer = csv.writer(out_file)
+        writer = csv.DictWriter(out_file, fieldnames=fieldnames)
+        csv.writer(out_file).writerow(fieldnames)
         regexp = re.compile(r'RT @')
+
         try:
-            for line in csv.reader(in_file):
-                if regexp.search(line[1]):
+            for row in csv.DictReader(in_file):
+                if regexp.search(row['tweet']):
                     continue
-                writer.writerow(line)
+                writer.writerow(row)
         except Exception as ex:
             print(ex)
 
+
+def remove_duplicates2(file, destination):
+    df = pd.read_csv(file)
+    print(df.shape)
+    print(df.duplicated(subset=None, keep='first'))
+    exit()
 
 # Iterate over a file and apply a function to each string of csv
 # TODO: fijo que se puede hacer más rápido y facil con pandas xd
 def iterate_file(file, function):
     return None
 
+def check_max_users(file):
+    df = pd.read_csv(file)
+    x = 0
+    limit = 800
+    # for i in set(df['user_id']):
+    #     df_temp = df.loc[df['user_id'] == i]
+    #     if df_temp['user_id'].value_counts().values[0] > limit:
+    #         print(df_temp.sample(limit))
+    #         exit()
+    for i in df['user_id'].value_counts():
+        if i > limit:
+            x += limit
+    print(x)
+
+def mix_dataframes(dataframe_list):
+    df = pd.read_csv(dataframe_list[0])
+    for ds in dataframe_list:
+        df = pd.concat([])
+            
 
 if __name__ == "__main__":
-    BASE_PATH = '/Users/gusy/DOCTORADO/'
-    DATASET_PATH = BASE_PATH + 'Data/Tweets/processed/english/'
-    DESTINATION_PATH = BASE_PATH + 'Data/Tweets/processed/ablation/noHashtagUrl/'
+    BASE_PATH = '/dataset_conversion/'
+    DATASET_PATH = BASE_PATH + ''
+    DESTINATION_PATH = BASE_PATH + ''
 
-
-
-    # transform_gz_csv(DATASET_PATH+'amnesty', DESTINATION_PATH, 'amnesty', 'en')
+    # check_max_users(DATASET_PATH+'amnesty_cleaned2.csv')
+    remove_duplicates('amnesty.csv', 'amnesty_cleaned.csv')
+    remove_RT(DATASET_PATH+'amnesty_cleaned.csv', DESTINATION_PATH+'amnesty_cleaned2.csv')
+    
+    # transform_gz_csv(DATASET_PATH+'amnesty', DESTINATION_PATH, 'amnesty', 'en', True)
     # orgs = ['boeing', 'deloitte', 'microsoft', 'verizon', 'amnesty', 'labour']
     # for org in orgs:
     #     remove_duplicates(DATASET_PATH + org + '2.csv',
     #                       DESTINATION_PATH + org + '3.csv')
-    with open(DATASET_PATH + 'mixed_noVerizon.csv', 'r') as inp, open(DESTINATION_PATH + 'mixed_Hashtag.csv', 'w') as out:
-        writer = csv.writer(out)
-        for row in csv.reader(inp):
-            row[1] = replace_token('emoji', row[1])
-            row[1] = replace_token('url', row[1])
-            row[1] = replace_token('@', row[1])
-            # row[1] = replace_token('#', row[1])
-            writer.writerow(row)
+    # with open(DATASET_PATH + 'mixed_noVerizon.csv', 'r') as inp, open(DESTINATION_PATH + 'mixed_Hashtag.csv', 'w') as out:
+    #     writer = csv.writer(out)
+    #     for row in csv.reader(inp):
+    #         row[1] = replace_token('emoji', row[1])
+    #         row[1] = replace_token('url', row[1])
+    #         row[1] = replace_token('@', row[1])
+    #         # row[1] = replace_token('#', row[1])
+    #         writer.writerow(row)
