@@ -206,7 +206,6 @@ def build_user_dataset(organisations, tweets_per_user, split=False, users=0):
             
 
 if __name__ == "__main__":
-<<<<<<< HEAD
     BASE_PATH = '/Users/gusy/DOCTORADO/'
     DATASET_PATH = BASE_PATH + 'Data/Tweets/processed/ablation/noVerizon/'
     DESTINATION_PATH = BASE_PATH + 'Data/Tweets/processed/ablation/noVerizon/noOrgs/'
@@ -220,17 +219,7 @@ if __name__ == "__main__":
                     writer.writerow(row)
 
     # transform_gz_csv(DATASET_PATH+'amnesty', DESTINATION_PATH, 'amnesty', 'en')
-=======
-    BASE_PATH = '/dataset_conversion/'
-    DATASET_PATH = BASE_PATH + ''
-    DESTINATION_PATH = BASE_PATH + ''
 
-    # check_max_users(DATASET_PATH+'amnesty_cleaned2.csv')
-    remove_duplicates('amnesty.csv', 'amnesty_cleaned.csv')
-    remove_RT(DATASET_PATH+'amnesty_cleaned.csv', DESTINATION_PATH+'amnesty_cleaned2.csv')
-    
-    # transform_gz_csv(DATASET_PATH+'amnesty', DESTINATION_PATH, 'amnesty', 'en', True)
->>>>>>> ad0b0b8d1a7b84f0657186fe222f6f9d002b211b
     # orgs = ['boeing', 'deloitte', 'microsoft', 'verizon', 'amnesty', 'labour']
     # for org in orgs:
     #     remove_duplicates(DATASET_PATH + org + '2.csv',
