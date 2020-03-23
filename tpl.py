@@ -85,6 +85,7 @@ def remove_duplicates(file, destination):
         seen = set()
         try:
             reader = csv.DictReader(in_file)
+            reader = csv.DictReader(x.replace('\0', '') for x in in_file)
             for row in reader:
                 if row['tweet'] in seen:
                     continue
@@ -92,6 +93,7 @@ def remove_duplicates(file, destination):
                 writer.writerow(row)
         except Exception as ex:
             print(ex)
+            print(row)
 
 
 def remove_RT(file, destination):
@@ -123,24 +125,84 @@ def remove_duplicates2(file, destination):
 def iterate_file(file, function):
     return None
 
-def check_max_users(file):
-    df = pd.read_csv(file)
-    x = 0
-    limit = 800
-    # for i in set(df['user_id']):
-    #     df_temp = df.loc[df['user_id'] == i]
-    #     if df_temp['user_id'].value_counts().values[0] > limit:
-    #         print(df_temp.sample(limit))
-    #         exit()
-    for i in df['user_id'].value_counts():
-        if i > limit:
-            x += limit
-    print(x)
+def check_max_users(organisations, tweet_limit, gathered_tweets):
+    limit = tweet_limit
+    temp = float('inf')
+    for i in organisations:
+        df = pd.read_csv(i+'_clean.csv')
+        x = 0
+        y = 0
+        for j in df['user_id'].value_counts():
+            if j > limit:
+                x += limit
+                y += 1
+        if y < temp:
+            temp = y
+        # print('{} --> {} users'.format(i, y))
+    x = temp * limit * len(organisations)
+    print('With {} tweets per user ---> {} total tweets'.format(limit, x))
+    if x > gathered_tweets and limit > 500:
+        check_max_users(organisations, limit-50, x)
 
 def mix_dataframes(dataframe_list):
     df = pd.read_csv(dataframe_list[0])
     for ds in dataframe_list:
         df = pd.concat([])
+
+def build_user_dataset(organisations, tweets_per_user, split=False, users=0):
+    # for i in organisations:
+    #     df = pd.read_csv(i+'_clean.csv')
+    #     for j in df['user_id'].value_counts():
+    #         if j > limit:
+    #             y += 1
+    if split:
+        df_train = pd.DataFrame()
+        df_val = pd.DataFrame()
+        df_test = pd.DataFrame()
+    for i in organisations:
+        if split:
+            train_users = int(users * 0.7)
+            val_users = int(users * 0.1)
+            test_users = users - train_users - val_users
+
+        df = pd.read_csv(i+'_clean.csv')
+        for j in set(df['user_id']):
+            df_temp = df.loc[df['user_id'] == j]
+            if df_temp['user_id'].value_counts().values[0] > tweets_per_user:
+                if train_users > 0:
+                    if df_train.empty:
+                        df_train = df_temp.sample(tweets_per_user)
+                    else:
+                        ds = df_temp.sample(tweets_per_user)
+                        df_train = pd.concat([df_train,ds], axis=0)
+                    train_users -= 1
+                elif val_users > 0:
+                    if df_val.empty:
+                        df_val = df_temp.sample(tweets_per_user)
+                    else:
+                        ds = df_temp.sample(tweets_per_user)
+                        df_val = pd.concat([df_val,ds], axis=0)
+                    val_users -= 1
+                elif test_users > 0:
+                    if df_test.empty:
+                        df_test = df_temp.sample(tweets_per_user)
+                    else:
+                        ds = df_temp.sample(tweets_per_user)
+                        df_test = pd.concat([df_test,ds], axis=0)
+                    test_users -= 1
+
+        df_train.to_csv('train_users.csv',
+                        header=['user_id', 'organisation', 'tweet'],
+                        quoting=csv.QUOTE_ALL,
+                        index=False)
+        df_val.to_csv('val_users.csv',
+                      header=['user_id', 'organisation', 'tweet'],
+                      quoting=csv.QUOTE_ALL,
+                      index=False)
+        df_test.to_csv('test_users.csv',
+                       header=['user_id', 'organisation', 'tweet'],
+                       quoting=csv.QUOTE_ALL,
+                       index=False)
             
 
 if __name__ == "__main__":
