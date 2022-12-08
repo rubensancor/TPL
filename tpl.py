@@ -203,32 +203,10 @@ def build_user_dataset(organisations, tweets_per_user, split=False, users=0):
                        header=['user_id', 'organisation', 'tweet'],
                        quoting=csv.QUOTE_ALL,
                        index=False)
-            
+
 
 if __name__ == "__main__":
-    BASE_PATH = '/Users/gusy/DOCTORADO/'
-    DATASET_PATH = BASE_PATH + 'Data/Tweets/processed/ablation/noVerizon/'
-    DESTINATION_PATH = BASE_PATH + 'Data/Tweets/processed/ablation/noVerizon/noOrgs/'
+    BASE_PATH = ''
+    DATASET_PATH = BASE_PATH + ''
+    DESTINATION_PATH = BASE_PATH + 'TPL/'
 
-    for (dirpath, dirnames, filenames) in os.walk(DATASET_PATH):
-        for f in filenames:
-            with open(DATASET_PATH + f, 'r') as inp, open(DESTINATION_PATH + f, 'w') as out:
-                writer = csv.writer(out)
-                for row in csv.reader(inp):
-                    row[1] = replace_token('orgs', row[1])
-                    writer.writerow(row)
-
-    # transform_gz_csv(DATASET_PATH+'amnesty', DESTINATION_PATH, 'amnesty', 'en')
-
-    # orgs = ['boeing', 'deloitte', 'microsoft', 'verizon', 'amnesty', 'labour']
-    # for org in orgs:
-    #     remove_duplicates(DATASET_PATH + org + '2.csv',
-    #                       DESTINATION_PATH + org + '3.csv')
-    # with open(DATASET_PATH + 'mixed_noVerizon.csv', 'r') as inp, open(DESTINATION_PATH + 'mixed_Hashtag.csv', 'w') as out:
-    #     writer = csv.writer(out)
-    #     for row in csv.reader(inp):
-    #         row[1] = replace_token('emoji', row[1])
-    #         row[1] = replace_token('url', row[1])
-    #         row[1] = replace_token('@', row[1])
-    #         # row[1] = replace_token('#', row[1])
-    #         writer.writerow(row)

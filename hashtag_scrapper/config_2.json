@@ -1,0 +1,9 @@
+{
+    "CONSUMER_KEY" : "",
+    "CONSUMER_SECRET" : "",
+    "ACCESS_TOKEN" : "",
+    "ACCESS_TOKEN_SECRET" : "",
+    "TELEGRAM_TOKEN": "",
+    "TELEGRAM_CHAT_ID": "",
+    "Comment": ""
+}
